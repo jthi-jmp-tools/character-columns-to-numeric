@@ -1,5 +1,39 @@
 ﻿Names Default To Here(1);
 
+num_validator = Function({str}, {Default Local},
+/*************************************************************************
+Function: num_valiodator
+	---Prototype---
+	num_validator(string str)
+	---------------
+	Validator function for numbers due to JMPs Num() function doing more than is desired.
+	See: https://community.jmp.com/t5/Discussions/JSL-Feature-or-Bug/m-p/452695
+
+
+Returns:
+	Missing or number
+
+Prototype:
+	> num_valiodator(str string)
+
+Parameters:
+	str - String to validate
+
+Examples:
+	----------JSL-----------
+	Show(num_validator("-1"));
+	Show(num_validator("£1"));
+	------------------------	
+*************************************************************************/
+	regex_validator_string = "^[-\+]{0,1}[0-9\.\,]+$";
+	If(Is Missing(Regex(str, regex_validator_string)),
+		retval = .; //use missing as non match due to num returning . in case of non-numeric
+	, //else
+		retval = Num(str)
+	);
+	return(retval);
+);
+
 change_character_column_to_numeric = Function({col_name, dt = Current Data Table(), sample_rate = 1, change_threshold = 1, allow_int = 0},
 	{Default Local}, 
 /*************************************************************************
@@ -39,7 +73,7 @@ Examples:
 			dt_summary << Delete Row(missing_rows)
 		);
 		
-		first_last = Any(Is Missing(Num(dt_summary[1, 1])), Is Missing(Num(dt_summary[N Rows(dt_summary), 1])));
+		first_last = Any(Is Missing(num_validator(dt_summary[1, 1])), Is Missing(num_validator(dt_summary[N Rows(dt_summary), 1])));
 		If(first_last == 1,
 			Close(dt_summary, no save);
 			Return("Column " || col_name || " wasn't modified after first last test");
@@ -60,7 +94,7 @@ Examples:
 		row_nok = 1;
 		is_int = 0;
 		For Each({row_val}, dt_sampled[0, 1],
-			val_as_num = Num(row_val);
+			val_as_num = num_validator(row_val);
 			row_nok = Is Missing(val_as_num);
 			If(row_nok,
 				Break(),
